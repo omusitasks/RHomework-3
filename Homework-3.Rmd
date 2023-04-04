@@ -1,0 +1,302 @@
+---
+title: "Naive Bayes and Decision Trees"
+author: "Hieu Pham"
+output: html_notebook
+---
+
+
+Load required packages
+```{r}
+library(tidyverse)
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(caret)
+library(Metrics)
+library(randomForest)
+library(rpart)
+library(e1071)
+```
+
+Problem Set
+1. How does the random forest differ from a decision tree?
+```{r}
+# A random forest is an ensemble learning algorithm that uses multiple decision trees to make predictions. Unlike a single decision tree, which only considers one set of decision criteria at each node, a random forest considers a random subset of criteria at each node, allowing it to make more robust predictions. This also helps to prevent overfitting, since each tree is only considering a random subset of the data.
+```
+
+
+2. What is the difference between classification and regression?
+```{r}
+# Classification is a supervised learning technique used to identify which class a data point belongs to. It is used for categorical data, such as determining whether an email is spam or not. Regression is a supervised learning technique used to predict a continuous value. It is used for numerical data, such as predicting the price of a house.
+```
+
+
+3. When evaluating a predictive machine learning model, how is using an independent test set different than
+using cross validation?
+```{r}
+# An independent test set is a set of data that is completely separate from the training and validation data sets. It is used to evaluate the performance of the model on unseen data. Cross validation is a technique used to assess the performance of the model on the training data. It involves partitioning the training set into multiple subsets and using each subset to train and test the model. By using cross validation, the performance of the model can be evaluated without needing to use a separate test set.
+```
+
+
+4. Suppose for a predictive problem, you used an independent test set and had an 80% accuracy. Then for
+the same predictive problem, you used cross validation and had an accuracy of 85%. Are these two numbers
+comparable?
+```{r}
+# 
+# No, these two numbers are not directly comparable. The independent test set is a measure of the performance of the model on unseen data, while the accuracy from cross validation is a measure of the performance of the model on the training data. Therefore, the accuracy from cross validation is likely to be higher than the accuracy from the independent test set.
+```
+
+
+5. suppose you build a predictive algorithm, you had an MAE of 123.53 and an RMSE or 423.51. Are these
+two numbers meaningful? If yes, they are explain why. If not, explain what other information you need to
+make these numbers meaningful.
+
+```{r}
+# Yes, these two numbers are meaningful. MAE (Mean Absolute Error) is a measure of the average magnitude of the errors in a set of predictions, and RMSE (Root Mean Squared Error) is a measure of the average magnitude of the errors in a set of predictions, taking into account the squares of the errors. In order to make these numbers meaningful, however, you would need to compare them to the MAE and RMSE of other models, and also compare them to a baseline model in order to understand how much better your model is performing than the baseline.
+```
+
+
+6. Read in the BreastCancer.csv dataset, and remove any rows with missing values. Using an independent
+test set with an 80/20 split, build a 1. Naive Bayes Classifier, 2. Decision Tree Classifier, 3. Random Forest
+Classifier using accuracy and Recall as your evaluation metric.
+```{r}
+#read in the data
+df <- read.csv("breast-cancer.csv")
+
+
+
+df$irradiat <- as.factor(df$irradiat)
+df$class <- as.factor(df$class)
+df$breast.quad <- as.factor(df$breast.quad) 
+df$breast <- as.factor(df$breast)
+df$falsede.caps <- as.factor(df$falsede.caps)
+df$mefalsepause <- as.factor(df$mefalsepause)
+df$tumor.size <- as.factor(df$tumor.size)
+df$age <- as.factor(df$age)
+df$deg.malig <- as.factor(df$deg.malig)
+df$inv.falsedes <- as.factor(df$inv.falsedes)
+
+#remove any rows with missing values
+data <- na.omit(df)
+
+
+#split the data into training and test sets
+set.seed(42)
+trainIndex <- sample(1:nrow(data), 0.8*nrow(data))
+trainData <- data[index, ]
+testData <- data[-index, ]
+
+```
+
+Naive Bayes classifier
+```{r}
+
+#build a Naive Bayes Classifier
+library(e1071)
+
+# Build Naive Bayes Classifier
+model_nb <- naiveBayes(class ~ ., data = trainData)
+
+# Make predictions on the test set
+pred_nb <- predict(model_nb, newdata = testData)
+
+# Evaluate the model
+confusionMatrix(pred_nb, testData$class)
+```
+
+
+```{r}
+
+library(caret)
+library(rpart)
+
+# Build Decision Tree Classifier
+model_dt <- rpart(class ~ ., data = trainData)
+
+# Make predictions on the test set
+pred_dt <- predict(model_dt, newdata = testData, type = "class")
+
+# Evaluate the model
+confusionMatrix(pred_dt, testData$class)
+```
+
+
+
+```{r}
+
+library(randomForest)
+
+# Build Random Forest Classifier
+model_rf <- randomForest(class ~ ., data = trainData)
+
+# Make predictions on the test set
+pred_rf <- predict(model_rf, newdata = testData)
+
+# Evaluate the model
+confusionMatrix(pred_rf, testData$class)
+```
+
+
+• Which algorithm has the best accuracy?
+```{r}
+
+# NaiveBayes: Accuracy : 0.6727 , Recall:0.7949
+# Decision tree: Accuracy : 0.7455, Recall:0.8718    
+# RandomForest: Accuracy : 0.7636, Recall:  0.9487 
+
+#RandomForest has the best accuracy of 0.7636.
+```
+
+
+• Which algorithm has the best Recall measure?
+```{r}
+# RandomForest has the best Recall measure of 0.9487.
+```
+
+• According to the decision tree, what are the top three most important features?
+```{r}
+# The top three most important features according to the decision tree are mefalsepause, tumor-size, and deg-malig.
+```
+
+
+
+7. Now that you have a predictive model for predicting breast cancer in patients, how can you use this
+information to make decision? That is, how would you embed this information in a prescriptive analytics
+pipeline?
+```{r}
+
+# The predictive model can be used to inform decisions in a prescriptive analytics pipeline by providing actionable insights and recommendations. For example, based on the results of the predictive model, healthcare providers can prescribe a course of action, such as additional testing or a change in treatment, that would be most likely to lead to a positive outcome for the patient. Additionally, the model can be used to identify risk factors associated with breast cancer, which can help healthcare providers target prevention and early detection efforts to those who are most at risk.
+```
+
+
+8. Read in the CarPrice.csv dataset, and remove any rows with missing values. Using cross validation with
+an 3 folds, build a 1. Decision Tree Regressor, 2. Random Forest Regressor using MAE and RMSE as your
+evaluation metric.
+```{r}
+
+# load packages
+library(rpart)
+library(randomForest)
+
+# read in dataset
+df <- read.csv("CarPrice.csv", header = TRUE)
+
+# remove rows with missing values
+df <- na.omit(df)
+
+df <- df[, -which(names(df) == "CarName")]
+df$fuelsystem <- as.factor(df$fuelsystem)
+df$cylindernumber <- as.factor(df$cylindernumber)
+
+df$enginetype <- as.factor(df$enginetype) 
+df$enginelocation <- as.factor(df$enginelocation)
+df$drivewheel <- as.factor(df$drivewheel)
+df$carbody <- as.factor(df$carbody)
+df$doornumber <- as.factor(df$doornumber)
+df$fueltype <- as.factor(df$fueltype)
+df$aspiration <- as.factor(df$aspiration)
+df$symboling <- as.factor(df$symboling)
+
+# split dataset into train and test
+set.seed(123)
+idx <- sample(1:nrow(df), size = 0.7 * nrow(df))
+train <- df[idx, ]
+test <- df[-idx, ]
+
+# remove rows with missing values
+train <- na.omit(train)
+test <- na.omit(test)
+```
+
+
+
+```{r}
+# decision tree regressor
+dt <- rpart(price ~ ., data = train)
+
+# random forest regressor
+rf <- randomForest(price ~ ., data = train)
+
+```
+
+
+```{r}
+# cross validation
+library(caret)
+
+# decision tree
+cv_dt <- train(price ~ ., data = train, method = "rpart", trControl = trainControl(method = "cv", number = 3))
+
+# random forest
+cv_rf <- train(price ~ ., data = train, method = "rf", trControl = trainControl(method = "cv", number = 3))
+```
+
+
+```{r}
+# prediction
+pred_dt <- predict(cv_dt, test)
+pred_rf <- predict(cv_rf, test)
+
+```
+
+
+```{r}
+# evaluation
+#install.packages("Metrics")
+library(Metrics)
+
+mean_absolute_error_dt <- mae(test$price, pred_dt)
+mean_absolute_error_rf <- mae(test$price, pred_rf)
+
+# Decision Tree Regressor
+mean_absolute_error_dt
+
+#Random Forest Regressor
+mean_absolute_error_rf
+```
+
+• Which algorithm has the best MAE?
+
+```{r}
+# The Random Forest Regressor has the best MAE of 1678.251.
+```
+
+
+```{r}
+root_mean_squared_error_dt <- rmse(test$price, pred_dt)
+root_mean_squared_error_rf <- rmse(test$price, pred_rf)
+
+# Decision Tree Regressor
+root_mean_squared_error_dt
+
+#Random Forest Regressor
+root_mean_squared_error_rf
+```
+
+• Which algorithm has the best RMSE?
+```{r}
+# The Random Forest Regressor has the best RMSE of 2145.251.
+```
+
+• According to the decision tree, what are the top three most important features?
+```{r}
+# The top three most important features according to the decision tree are: engine size, curb weight, and horsepower.
+```
+
+9. Now that you have a predictive model for predicting car prices one year in the future, how can you use
+this information to make decision? That is, how would you embed this information in a prescriptive analytics
+pipeline?
+
+```{r}
+# A prescriptive analytics pipeline using this predictive model could be used to inform decision-making and optimize the processes involved in buying and selling cars. For example, the pipeline could be used to identify the optimal price to list a car for sale, and to determine the best offer to make on a car purchase. It could also be used to determine the ideal time to buy or sell a car, based on predicted price changes. Additionally, the pipeline could be used to inform marketing and advertising campaigns, targeting buyers and sellers likely to be affected by predicted price changes.
+```
+
+
+
+
+
+
+
+
+
